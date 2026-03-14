@@ -1,0 +1,62 @@
+// Import the Express framework
+const express = require('express')
+// Import the CORS package to allow requests from other origins
+const cors = require('cors')
+
+// Create the Express application
+const app = express()
+
+// Allow Express to read JSON data from incoming requests
+app.use(express.json())
+
+// Only allow requests coming from your Vue app
+app.use(cors({
+  origin: 'http://localhost:5173'
+}))
+
+// Route for the homepage — just confirms the server is alive
+app.get('/', (req, res) => {
+  res.json({ message: 'Yup, server is ready' })
+})
+
+// Temporary data acting as a database (will be replaced with MongoDB later)
+let products = [
+  { id: 1, name: 'Air Force 1', price: 120 },
+  { id: 2, name: 'Jordan 1', price: 180 },
+]
+
+// Route that returns all products when called
+app.get('/api/products', (req, res) => {
+  res.json(products)
+})
+// Route that returns only 1 product when called
+app.get('/api/products/:id', (req,res) =>{
+    const oneProduct = products.find(f => f.id === Number(req.params.id))
+    if(!oneProduct) return res.status(404).json({message: 'Product Not Found' })
+    res.json(oneProduct)
+})
+
+
+// Route that accepts new products
+app.post('/api/products', (req, res) =>{
+    const newProduct = {
+        id: products.length + 1,
+        ...req.body
+    }
+    products.push(newProduct)
+    res.status(201).json(newProduct)
+})
+
+// Route that updates the an 
+app.put('/api/products', (req, res) =>{
+    const index = products.findIndex(f => f.id === Number(req.params.id))
+    if(index === -1) return res.status(404).json({message:'Product Not found'})
+    products[index] = {...products[index], ...req.body}
+    res.json(products[index])
+})
+
+
+// Start the server and listen for requests on port 3000
+app.listen(3000, () => {
+  console.log('server is running on http://localhost:3000')
+})
