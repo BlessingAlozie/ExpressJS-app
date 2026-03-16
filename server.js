@@ -1,3 +1,6 @@
+require('dotenv').config()
+const mongoose = require('mongoose')
+const product = require('./models/products')
 // Import the Express framework
 const express = require('express')
 // Import the CORS package to allow requests from other origins
@@ -5,6 +8,11 @@ const cors = require('cors')
 
 // Create the Express application
 const app = express()
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log('MongoDB connected'))
+.catch((error) => console.log('DB not connected', error.message))
+
+
 
 // Allow Express to read JSON data from incoming requests
 app.use(express.json())
@@ -25,16 +33,21 @@ app.get('/', (req, res) => {
   res.json({ message: 'Yup, server is ready' })
 })
 
-// Temporary data acting as a database (will be replaced with MongoDB later)
-let products = [
-  { id: 1, name: 'Air Force 1', price: 120 },
-  { id: 2, name: 'Jordan 1', price: 180 },
-]
 
-// Route that returns all products when called
-app.get('/api/products', (req, res) => {
-  res.json(products)
+
+// Get all products from the real database
+app.get('/api/products', async (req, res) => {
+  try {
+    const products = await Product.find()
+    res.json(products)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
 })
+
+
+
+
 // Route that returns only 1 product when called
 app.get('/api/products/:id', (req,res) =>{
     const oneProduct = products.find(f => f.id === Number(req.params.id))
