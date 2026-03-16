@@ -9,6 +9,12 @@ const app = express()
 // Allow Express to read JSON data from incoming requests
 app.use(express.json())
 
+// Logger middleware — logs every incoming request with its method and URL
+app.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.url}`)
+  next()
+})
+
 // Only allow requests coming from your Vue app
 app.use(cors({
   origin: 'http://localhost:5173'
@@ -48,13 +54,17 @@ app.post('/api/products', (req, res) =>{
 })
 
 // Route that updates the an 
-app.put('/api/products', (req, res) =>{
-    const index = products.findIndex(f => f.id === Number(req.params.id))
+app.put('/api/products/:id', (req, res) =>{
+    const index = products.findIndex(p => p.id === Number(req.params.id))
     if(index === -1) return res.status(404).json({message:'Product Not found'})
     products[index] = {...products[index], ...req.body}
     res.json(products[index])
 })
 
+app.delete('/api/products/:id', (req, res) =>{
+     products =  products.filter(i => i.id !== Number(req.params.id))
+    res.json({message: 'Product deleted' })
+})
 
 // Start the server and listen for requests on port 3000
 app.listen(3000, () => {
