@@ -1,85 +1,93 @@
 require('dotenv').config()
 const mongoose = require('mongoose')
-const product = require('./models/products')
-// Import the Express framework
 const express = require('express')
-// Import the CORS package to allow requests from other origins
 const cors = require('cors')
+const Product = require('./models/Product')
 
-// Create the Express application
 const app = express()
+
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log('MongoDB connected'))
-.catch((error) => console.log('DB not connected', error.message))
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => console.log('❌ DB Error:', err.message))
 
-
-
-// Allow Express to read JSON data from incoming requests
+// Middleware
 app.use(express.json())
-
-// Logger middleware — logs every incoming request with its method and URL
+app.use(cors({ origin: 'http://localhost:5173' }))
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`)
   next()
 })
 
-// Only allow requests coming from your Vue app
-app.use(cors({
-  origin: 'http://localhost:5173'
-}))
+// GET all products from database
+app.get('/api/products', async (req, res) =>{
+  try {
+    const result = await Product.find()
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({message: error.message})
+  }
+})
 
-// Route for the homepage — just confirms the server is alive
-app.get('/', (req, res) => {
-  res.json({ message: 'Yup, server is ready' })
+// GET one product by ID
+app.get('/api/products/:id', async (req, res) =>{
+  try {
+    const result = await Product.findById(req.params.id)
+    if(!result) return res.status(404).json({message: "Produt Not Found"})
+    res.json(result)
+  } 
+  catch (error) {
+    res.status(500).json({message: error.message})
+  }
+})
+
+// POST — create new product
+app.post('/api/products', async (req, res) =>{
+  try {
+    result = Product.create(req.body)
+  res.status(201).json(result)
+  } catch (error) {
+    res.status(400).json({message: error.message})
+  }
 })
 
 
-
-// Get all products from the real database
-app.get('/api/products', async (req, res) => {
+// PUT — update a product
+app.put('/api/products/:id', async (req, res) =>{
   try {
-    const products = await Product.find()
-    res.json(products)
-  } catch (err) {
-    res.status(500).json({ message: err.message })
+    const result = await Product.findByIdAndUpdate(req.params.id, req.body, {new: true})
+    if(!result) return res.status(404).json({message: 'Product not founf'})
+    res.json(result)
+  } 
+  catch (error) {
+  res.status(400).json({message: error.message})
+  }
+})
+
+// DELETE — remove a product
+
+app.delete('/api/products/:id', async(req, res) =>{
+  try {
+    await Product.findByIdAndDelete(req.params.id)
+    res.json({message: 'Product Deleted'})
+  } 
+  catch (error) {
+  res.status(500).json({message: error.message})
   }
 })
 
 
 
 
-// Route that returns only 1 product when called
-app.get('/api/products/:id', (req,res) =>{
-    const oneProduct = products.find(f => f.id === Number(req.params.id))
-    if(!oneProduct) return res.status(404).json({message: 'Product Not Found' })
-    res.json(oneProduct)
-})
+// app.delete('/api/products/:id', async (req, res) => {
+//   try {
+//     await Product.findByIdAndDelete(req.params.id)
+//     res.json({ message: 'Product deleted' })
+//   } catch (err) {
+//     res.status(500).json({ message: err.message })
+//   }
+// })
 
-
-// Route that accepts new products
-app.post('/api/products', (req, res) =>{
-    const newProduct = {
-        id: products.length + 1,
-        ...req.body
-    }
-    products.push(newProduct)
-    res.status(201).json(newProduct)
-})
-
-// Route that updates the an 
-app.put('/api/products/:id', (req, res) =>{
-    const index = products.findIndex(p => p.id === Number(req.params.id))
-    if(index === -1) return res.status(404).json({message:'Product Not found'})
-    products[index] = {...products[index], ...req.body}
-    res.json(products[index])
-})
-
-app.delete('/api/products/:id', (req, res) =>{
-     products =  products.filter(i => i.id !== Number(req.params.id))
-    res.json({message: 'Product deleted' })
-})
-
-// Start the server and listen for requests on port 3000
 app.listen(3000, () => {
   console.log('server is running on http://localhost:3000')
 })
