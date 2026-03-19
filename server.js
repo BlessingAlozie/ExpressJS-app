@@ -21,6 +21,11 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/products', require('./routes/products'))
+// Routes
+app.use('/api/products', require('./routes/products'))
+app.use('/api/auth', require('./routes/auth'))  // add this line
+
+
 
 // start server
 app.listen(3000, () => {
